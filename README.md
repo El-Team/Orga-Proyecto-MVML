@@ -6,5 +6,5 @@ Built as an assigment for the course *Organización del Computador* at USB. The 
 
 ## Credits
 
-Design by Prof. Angela Di Serio, implementation by @lualparedes and @almiavicas.
+Design by Prof. Angela Di Serio, implementation by [@lualparedes](https://github.com/lualparedes) and [@almiavicas](https://github.com/almiavicas).
 
