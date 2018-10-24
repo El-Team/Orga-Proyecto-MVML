@@ -15,7 +15,7 @@ program: 	.space 400
 
 .text
 
-main:
+start:
 	la 	$a0, welcome		# syscall String argument
 	li 	$v0, 4 			# Print String syscall code
 	syscall
@@ -23,9 +23,19 @@ main:
 	la 	$a0, programPath
 	li 	$a1, 16			# Max num of chars to read
 	li	$v0, 8 			# Read String syscall
-	syscall				# Read String is stored in buffer
+	syscall				
 	
-	# Open File
+	b	open_file
+	
+open_file:
+	# Locates the line feed at the end of the input
+	addi 	$a0, $a0, 1
+	lb	$a1, ($a0)
+	bne 	$a1, 10, open_file 	# loop if this is not the line feed
+	li 	$a1, 0
+	sb 	$a1, ($a0) 		# Replace the line feed with /0
+	
+	la 	$a0, programPath
 	li 	$a1, 0			# File for Read only
 	li	$a2, 0
 	li 	$v0, 13 		# Open File syscall
