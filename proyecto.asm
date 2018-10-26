@@ -1,15 +1,15 @@
 .data
-msg: 		.word welcome compiling searchingInst decodingRegis fileNotFound executionEnd
+msg: 		.word welcome compiling searching_inst decoding_regis file_not_found execution_end
 
 welcome: 	.asciiz "Bienvenido, por favor introduzca el archivo que contiene el programa ensamblado\n"
 compiling: 	.asciiz "Analizando archivo\n"
-searchingInst:	.asciiz "Buscando instrucciones\n"
-decodingRegis:	.asciiz "Decodificando registros\n"
-fileNotFound:	.asciiz "No se encontro el archivo especificado\n"
-executionEnd: 	.asciiz "Se ejecuto el programa exitosamente"
+searching_inst:	.asciiz "Buscando instrucciones\n"
+decoding_regis:	.asciiz "Decodificando registros\n"
+file_not_found:	.asciiz "No se encontro el archivo especificado\n"
+execution_end: 	.asciiz "Se ejecuto el programa exitosamente"
 
 .align 2
-programPath: 	.space 16
+program_path: 	.space 16
 buffer: 	.space 8
 program: 	.space 400
 
@@ -20,7 +20,7 @@ start:
 	li 	$v0, 4 			# Print String syscall code
 	syscall
 	
-	la 	$a0, programPath
+	la 	$a0, program_path
 	li 	$a1, 16			# Max num of chars to read
 	li	$v0, 8 			# Read String syscall
 	syscall				
@@ -35,7 +35,7 @@ open_file:
 	li 	$a1, 0
 	sb 	$a1, ($a0) 		# Replace the line feed with /0
 	
-	la 	$a0, programPath
+	la 	$a0, program_path
 	li 	$a1, 0			# File for Read only
 	li	$a2, 0
 	li 	$v0, 13 		# Open File syscall
@@ -51,7 +51,7 @@ open_file:
 	
 	
 read_file:
-	la 	$a0, searchingInst
+	la 	$a0, searching_inst
 	li 	$v0, 4
 	syscall
 	
@@ -65,14 +65,14 @@ read_file:
 	
 	
 end_of_program:
-	la	$a0, executionEnd
+	la	$a0, execution_end
 	li 	$v0, 4
 	syscall
 	b 	exit
 
 # Error labels
 err_file:
-	la 	$a0, fileNotFound
+	la 	$a0, file_not_found
 	li 	$v0, 4
 	syscall
 	b 	exit
