@@ -16,13 +16,13 @@ program: 	.space 400
 .text
 
 _start:
+	li 	$v0, 4 			# Print String syscall code	
 	la 	$a0, welcome		# syscall String argument
-	li 	$v0, 4 			# Print String syscall code
 	syscall
 	
+	li	$v0, 8 			# Read String syscall	
 	la 	$a0, program_path
 	li 	$a1, 16			# Max num of chars to read
-	li	$v0, 8 			# Read String syscall
 	syscall				
 	
 	b	_open_file
@@ -35,15 +35,16 @@ _open_file:
 	li 	$a1, 0
 	sb 	$a1, ($a0) 		# Replace the line feed with /0
 	
+	# Open File
+	li 	$v0, 13 		# Open File syscall
 	la 	$a0, program_path
 	li 	$a1, 0			# File for Read only
 	li	$a2, 0
-	li 	$v0, 13 		# Open File syscall
 	syscall
 	move 	$t0, $v0 		# Save File descriptor into $t0
 	
+	li 	$v0, 4	
 	la 	$a0, compiling
-	li 	$v0, 4
 	syscall
 	
 	bltz 	$t0, _err_file
@@ -55,10 +56,10 @@ _read_file:
 	li 	$v0, 4
 	syscall
 	
+	li 	$v0, 14			# Read File syscall	
 	move	$a0, $t0
 	la 	$a1, buffer
 	li 	$a2, 800
-	li 	$v0, 14			# Read File syscall
 	syscall
 	
 	b 	_read_char_loop
@@ -92,16 +93,15 @@ _read_number:
 	
 
 _end_of_program:
-
-	la	$a0, execution_end
 	li 	$v0, 4
+	la	$a0, execution_end
 	syscall
 	b 	_exit
 
 # Error labels
 _err_file:
-	la 	$a0, file_not_found
 	li 	$v0, 4
+	la 	$a0, file_not_found
 	syscall
 	b 	_exit
 
