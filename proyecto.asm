@@ -10,11 +10,7 @@ execution_end: 	.asciiz "Se ejecuto el programa exitosamente"
 
 .align 2
 program_path: 	.space 16
-<<<<<<< HEAD
 buffer: 	.space 800
-=======
-buffer: 	.space 8
->>>>>>> acc86b5aaf8c0141e7b62bb56429d791c395e75f
 program: 	.space 400
 
 .text
@@ -54,11 +50,7 @@ _open_file:
 	b 	_read_file
 	
 	
-<<<<<<< HEAD
 _read_file:
-=======
-read_file:
->>>>>>> acc86b5aaf8c0141e7b62bb56429d791c395e75f
 	la 	$a0, searching_inst
 	li 	$v0, 4
 	syscall
@@ -72,7 +64,6 @@ read_file:
 	b 	_read_char_loop
 	
 	
-<<<<<<< HEAD
 _read_next_char:
 	addi 	$a1, $a1, 1
 	b 	_read_char_loop
@@ -101,20 +92,14 @@ _read_number:
 	
 
 _end_of_program:
-=======
-end_of_program:
->>>>>>> acc86b5aaf8c0141e7b62bb56429d791c395e75f
+
 	la	$a0, execution_end
 	li 	$v0, 4
 	syscall
 	b 	_exit
 
 # Error labels
-<<<<<<< HEAD
 _err_file:
-=======
-err_file:
->>>>>>> acc86b5aaf8c0141e7b62bb56429d791c395e75f
 	la 	$a0, file_not_found
 	li 	$v0, 4
 	syscall
