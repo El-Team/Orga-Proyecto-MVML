@@ -6,11 +6,12 @@ compiling: 	.asciiz "Analizando archivo\n"
 searching_inst:	.asciiz "Buscando instrucciones\n"
 decoding_regis:	.asciiz "Decodificando registros\n"
 file_not_found:	.asciiz "No se encontro el archivo especificado\n"
+invalid_inst: 	.asciiz "Instruccion invalida\n"
 execution_end: 	.asciiz "Se ejecuto el programa exitosamente"
 
 .align 2
 program_path: 	.space 16
-buffer: 	.space 800
+buffer: 	.space 600
 program: 	.space 400
 
 .text
@@ -26,6 +27,7 @@ _start:
 	syscall				
 	
 	b	_open_file
+	
 	
 _open_file:
 	# Locates the line feed at the end of the input
@@ -62,6 +64,7 @@ _read_file:
 	li 	$a2, 800
 	syscall
 	
+	la 	$a2, program 		
 	b 	_read_char_loop
 	
 	
@@ -71,32 +74,45 @@ _read_next_char:
 	
 	
 _read_char_loop:
-	lb 	$t0, ($a1)
-	bge 	$t0, 0x61, _read_letter
+	lb 	$t0, ($a1) 		# $a1 points to the actual reading byte
+	addi 	$t2, $t2, 1		# Counter to watch when we read a complete instruction
+	bge 	$t0, 0x61, _read_letter	
 	bge 	$t0, 0x30, _read_number
 	beqz 	$t0, _end_of_program
-	# Else, it is reading a line feed
-	addi 	$a1, $a1, 2
-	b 	_read_char_loop
+	b 	_err_invalid_instruction
 	
 	
 _read_letter:
-	sub 	$t1, $t0, 0x61
-	sb 	$t1, ($a1)
+	sub 	$t1, $t0, 0x57
+	addu 	$t3, $t3, $t1 		# $t3 stores the actual instruction being written
+	beq 	$t2, 8, _save_word
+	sll 	$t3, $t3, 4
 	b 	_read_next_char
 
 
 _read_number:
 	sub 	$t1, $t0, 0x30
-	sb 	$t1, ($a1)
+	addu 	$t3, $t3, $t1 		# $t3 stores the actual instruction being written
+	beq 	$t2, 8, _save_word
+	sll 	$t3, $t3, 4
 	b 	_read_next_char
 	
+
+_save_word:
+	sw 	$t3, ($a2) 		# Save the instruction at $t3
+	addi 	$a2, $a2, 4
+	li 	$t2, 0
+	li 	$t3, 0
+	addi 	$a1, $a1, 3
+	b 	_read_char_loop
+
 
 _end_of_program:
 	li 	$v0, 4
 	la	$a0, execution_end
 	syscall
 	b 	_exit
+
 
 # Error labels
 _err_file:
@@ -105,5 +121,12 @@ _err_file:
 	syscall
 	b 	_exit
 
+
+_err_invalid_instruction:
+	li 	$v0, 4
+	la 	$a0, invalid_inst
+	syscall
+	b 	_exit
+	
 	
 _exit:
