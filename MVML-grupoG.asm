@@ -44,7 +44,8 @@ close_brackets: .asciiz ")\n"
 program_path: 	.space 64
 buffer: 	.space 600
 program: 	.space 400
-
+registers: 	.space 128
+memoria: 	.space 2000
 
 .text
 
@@ -155,6 +156,9 @@ _read_next_instruction:
 
 
 _read_instruction:
+	# At the end of the label:
+	# 	$t0 stores the number of the 1st Register found
+	# 	$t1 stores the number of the 2nd Register found
 	li 	$v0, 34 		# Prints hexadecimal value of the instruction
 	lw 	$a0, ($a2)
 	syscall
@@ -191,6 +195,9 @@ _read_instruction:
 
 
 _print_3regs:
+	# When this label is executed:
+	# 	$t0 stores the number of the 1st register of the instruction
+	# 	$t1 stores the number of the 2nd register of the instruction
 	srl 	$t2, $t4, 11		# Extracts the destiny register
 	andi 	$t2, $t2, 0x1f
 	
@@ -215,7 +222,20 @@ _print_3regs:
 	la 	$a0, line_feed
 	syscall
 	
-	b 	_read_next_instruction
+	# At this point, $t2 stores the 3rd register found in the instruction
+	# This means:
+	# 	$t2 stores the destiny register
+	# 	$t0 stores the 1st source register
+	# 	$t1 stores the 2nd source register
+	# Now we access to the direction of these registers in the virtual machine
+	sll 	$t0, $t0, 2
+	lw 	$t0, registers($t0)
+	sll 	$t1, $t1, 2
+	lw 	$t1, registers($t1)
+	sll 	$t2, $t2, 2
+	la 	$t2, registers($t2)
+	
+	jr 	$ra
 
 
 _print_2regs:
@@ -242,7 +262,18 @@ _print_2regs:
 	la 	$a0, line_feed
 	syscall
 	
-	b 	_read_next_instruction
+	# At this point, $t3 stores the Integer Offset found in the instruction
+	# This means:
+	# 	$t3 stores the Integer Offset
+	# 	$t0 stores the source register
+	# 	$t1 stores the destiny register
+	# Now we access to the value of these registers in the virtual machine
+	sll	$t0, $t0, 2
+	lw 	$t0, registers($t0)
+	sll 	$t1, $t1, 2
+	la 	$t1, registers($t1)
+	
+	jr	$ra
 	
 
 _print_lw_sw:
@@ -254,7 +285,7 @@ _print_lw_sw:
 	move 	$a0, $t1		
 	syscall
 	li 	$v0, 4
-	la 	$a0, dollar_sign
+	la 	$a0, space
 	syscall
 	li 	$v0, 1 			# Prints Integer Offset
 	move 	$a0, $t3
@@ -269,65 +300,186 @@ _print_lw_sw:
 	la 	$a0, close_brackets
 	syscall
 	
-	b 	_read_next_instruction
+	# At this point, $t3 stores the Integer Offset found in the instruction
+	# This means:
+	# 	$t3 stores the Integer Offset
+	# 	$t0 stores the source register
+	# 	$t1 stores the destiny register
+	# Now we access to the value of these registers in the virtual machine
+	sll 	$t0, $t0, 2
+	lw 	$t0, registers($t0)
+	sll 	$t1, $t1, 2
+	la 	$t1, registers($t1)
 	
+	jr	$ra
 	
+
+# The following instructions with label equal to "_<name of MIPS instruction>"
+# assume that:
+# 	$t0 stores the 1st register found in the instruction
+# 	$t1 stores the 2nd register found in the instruction
 _add:
 	la 	$a0, i_add
 	syscall
-	b 	_print_3regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	add 	$v0, $t0, $t1
+	# Saves the function result in the desired register
+	sw 	$v0, ($t2)
+	b 	_read_next_instruction
 _addi:
 	la 	$a0, i_addi
 	syscall
-	b 	_print_2regs
+	jal 	_print_2regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the source register in the virtual machine
+	# 	$t1 stores the value of the destiny register in the virtual machine
+	# 	$t3 stores the Integer Offset of the instruction
+	# Executes the function and stores the result in $v0
+	add 	$v0, $t0, $t3
+	# Saves the function result in the desired register
+	sw 	$v0, ($t1)
+	b 	_read_next_instruction
 _and:
 	la 	$a0, i_and
 	syscall
-	b 	_print_3regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	and 	$v0, $t0, $t1
+	# Saves the function result in the desired register
+	sw 	$v0, ($t2)
+	b 	_read_next_instruction
 _andi:
 	la 	$a0, i_andi
 	syscall
-	b 	_print_2regs
+	jal 	_print_2regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the source register in the virtual machine
+	# 	$t1 stores the value of the destiny register in the virtual machine
+	# 	$t3 stores the Integer Offset of the instruction
+	# Executes the function and stores the result in $v0
+	and 	$v0, $t0, $t3
+	# Saves the function result in the desired register
+	sw 	$v0, ($t1)
+	b 	_read_next_instruction
 _mult:
 	la 	$a0, i_mult
 	syscall
-	b 	_print_2regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	mult 	$t0, $t1
+	mfhi	$v0
+	# Saves the function result in the desired register
+	sw	$v0, ($t2)
+	b 	_read_next_instruction
 _or:
 	la 	$a0, i_or
 	syscall
-	b 	_print_3regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	or 	$v0, $t0, $t1
+	# Saves the function result in the desired register
+	sw	$v0, ($t2)
+	b 	_read_next_instruction
 _ori:
 	la 	$a0, i_ori
 	syscall
-	b 	_print_2regs
+	jal 	_print_2regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the source register in the virtual machine
+	# 	$t1 stores the value of the destiny register in the virtual machine
+	# 	$t3 stores the Integer Offset of the instruction
+	# Executes the function and stores the result in $v0
+	or 	$v0, $t0, $t3
+	# Saves the function result in the desired register
+	sw 	$v0, ($t1)
+	b 	_read_next_instruction
 _sllv:
 	la 	$a0, i_sllv
 	syscall
-	b 	_print_3regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	sllv 	$v0, $t0, $t1
+	# Saves the function result in the desired register
+	sw	$v0, ($t2)
+	b 	_read_next_instruction
 _sub:
 	la 	$a0, i_sub
 	syscall
-	b 	_print_3regs
+	jal 	_print_3regs
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the 1st source register in the virtual machine
+	# 	$t1 stores the value of the 2nd source register in the virtual machine
+	# 	$t2 stores the value of the destiny register in te virtual machine
+	# Executes the function and stores the result in $v0
+	sub 	$v0, $t0, $t1
+	# Saves the function result in the desired register
+	sw	$v0, ($t2)
+	b 	_read_next_instruction
 _lw:
 	la 	$a0, i_lw
 	syscall
-	b 	_print_lw_sw
+	jal 	_print_lw_sw
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the source register in the virtual machine
+	# 	$t1 stores the value of the destiny register in the virtual machine
+	# 	$t3 stores the Integer Offset of the instruction
+	# Executes the function and stores the result in $v0
+	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress
+	#la 	$t0, memoria($t0)	# Point $t0 to the requested memory adress
+	#lw 	$v0, ($t1)
+	# Saves the function result in the desired register
+	#sw 	$v0, ($t0)
+	b 	_read_next_instruction
 _sw:
 	la 	$a0, i_sw
 	syscall
-	b 	_print_lw_sw
+	jal 	_print_lw_sw
+	# When the jal execution ends, we have that:
+	# 	$t0 stores the value of the source register in the virtual machine
+	# 	$t1 stores the value of the destinty register in the virtual machine
+	# 	$t3 stores the Integer Offset of the instruction
+	# Executes the function and stores the result in $v0
+	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress	
+	#lw 	$v0, ($t1)
+	# Saves the function result in the desired memory adress
+	#sw 	$v0, memoria($t0)
+	b 	_read_next_instruction
 _bne:
 	la 	$a0, i_bne
 	syscall
-	b 	_print_2regs
+	jal 	_print_2regs
+	b 	_read_next_instruction
 _beq:
 	la 	$a0, i_beq
 	syscall
-	b 	_print_2regs
+	jal 	_print_2regs
+	b 	_read_next_instruction
 _halt: 	
 	la 	$a0, i_halt
 	syscall
-	b 	_end_of_program
+	jal 	_end_of_program
+	b 	_read_next_instruction
 	
 
 _end_of_program:
