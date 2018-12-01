@@ -12,9 +12,12 @@ compiling: 	.asciiz "Analizando archivo\n"
 searching_inst:	.asciiz "Buscando instrucciones\n"
 decoding_regis:	.asciiz "Decodificando registros\n"
 executing_prog:	.asciiz "Ejecutando Progama\n"
+execution_end: 	.asciiz "Se ejecuto el programa exitosamente\n"
+print_registers:.asciiz "Imprimiendo registros virtuales: \n"
+print_memory: 	.asciiz "Para imprimir memoria, indique la cantidad de palabras que desea imprimir: \n"
 file_not_found:	.asciiz "No se encontro el archivo especificado\n"
 invalid_inst: 	.asciiz "Instruccion invalida\n"
-execution_end: 	.asciiz "Se ejecuto el programa exitosamente"
+
 
 i_add: 		.asciiz "	R add" 
 i_addi: 	.asciiz "	I addi"
@@ -446,11 +449,11 @@ _lw:
 	# 	$t1 stores the value of the destiny register in the virtual machine
 	# 	$t3 stores the Integer Offset of the instruction
 	# Executes the function and stores the result in $v0
-	add 	$t0, $t0, $t3 		# Calculates the total offset from the memory address
-	la 	$t0, memoria($t0)	# Point $t0 to the requested memory address
-	lw 	$v0, ($t0)		# Moves to $v0 the desired value to load from memory
+	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory address
+	#la 	$t0, memoria($t0)	# Point $t0 to the requested memory address
+	#lw 	$v0, ($t0)		# Moves to $v0 the desired value to load from memory
 	# Saves the function result in the desired register
-	sw 	$v0, ($t1)
+	#sw 	$v0, ($t1)
 	b 	_read_next_instruction
 _sw:
 	la 	$a0, i_sw
@@ -461,10 +464,10 @@ _sw:
 	# 	$t1 stores the value of the destinty register in the virtual machine
 	# 	$t3 stores the Integer Offset of the instruction
 	# Executes the function and stores the result in $v0
-	add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress	
-	lw 	$v0, ($t1)		# Moves to $v0 the desired value to store in memory
+	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress	
+	#lw 	$v0, ($t1)		# Moves to $v0 the desired value to store in memory
 	# Saves the function result in the desired memory adress
-	sw 	$v0, memoria($t0)
+	#sw 	$v0, memoria($t0)
 	b 	_read_next_instruction
 _bne:
 	la 	$a0, i_bne
@@ -487,8 +490,52 @@ _end_of_program:
 	li 	$v0, 4
 	la	$a0, execution_end
 	syscall
-	b 	_exit
+	b 	_print_virtual_registers
 
+
+_print_virtual_registers:
+	la 	$a0, print_registers
+	syscall
+	li 	$t0, 0
+	la 	$t2, registers
+
+
+_print_reg_loop:
+	beq 	$t0, 32, _print_memory
+	li 	$v0, 34 	# Print integer in hexadecimal syscall
+	lw	$a0, ($t2)
+	syscall
+	addi 	$t2, $t2, 4
+	addi 	$t0, $t0, 1
+	li 	$v0, 4
+	la 	$a0, line_feed
+	syscall
+	b	_print_reg_loop
+	
+
+_print_memory:
+	la 	$a0, print_memory
+	li 	$v0, 4 		# print string syscall
+	syscall
+	li 	$v0, 5
+	syscall
+	move 	$t1, $v0
+	la 	$t2, registers
+	li 	$t0, 0
+
+	
+_print_memory_loop:
+	beq 	$t0, $t1, _exit
+	li 	$v0, 34 	# Print hexadecimal syscall
+	lw 	$a0, ($t2)
+	syscall
+	addi 	$t0, $t0, 1
+	addi 	$t2, $t2, 4
+	li 	$v0, 4
+	la 	$a0, line_feed
+	syscall
+	b 	_print_memory_loop
+	
 
 # Error labels
 _err_file:
