@@ -45,6 +45,7 @@ program_path: 	.space 64
 buffer: 	.space 600
 program: 	.space 400
 registers: 	.space 128
+.align 2
 memoria: 	.space 2000
 
 .text
@@ -445,11 +446,11 @@ _lw:
 	# 	$t1 stores the value of the destiny register in the virtual machine
 	# 	$t3 stores the Integer Offset of the instruction
 	# Executes the function and stores the result in $v0
-	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress
-	#la 	$t0, memoria($t0)	# Point $t0 to the requested memory adress
-	#lw 	$v0, ($t1)
+	add 	$t0, $t0, $t3 		# Calculates the total offset from the memory address
+	la 	$t0, memoria($t0)	# Point $t0 to the requested memory address
+	lw 	$v0, ($t0)		# Moves to $v0 the desired value to load from memory
 	# Saves the function result in the desired register
-	#sw 	$v0, ($t0)
+	sw 	$v0, ($t1)
 	b 	_read_next_instruction
 _sw:
 	la 	$a0, i_sw
@@ -460,10 +461,10 @@ _sw:
 	# 	$t1 stores the value of the destinty register in the virtual machine
 	# 	$t3 stores the Integer Offset of the instruction
 	# Executes the function and stores the result in $v0
-	#add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress	
-	#lw 	$v0, ($t1)
+	add 	$t0, $t0, $t3 		# Calculates the total offset from the memory adress	
+	lw 	$v0, ($t1)		# Moves to $v0 the desired value to store in memory
 	# Saves the function result in the desired memory adress
-	#sw 	$v0, memoria($t0)
+	sw 	$v0, memoria($t0)
 	b 	_read_next_instruction
 _bne:
 	la 	$a0, i_bne
